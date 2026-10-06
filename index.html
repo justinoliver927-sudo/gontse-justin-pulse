@@ -8,7 +8,19 @@
 
 <!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "ca4cbfb1-b09e-449e-8e5e-caa7db29e02a",
+      safari_web_id: "web.onesignal.auto.220aec70-25f6-4973-9e9c-d6d04112ecc1",
+      notifyButton: {
+        enable: true,
+      },
+    });
+  });
+</script>
 <style>
 *{
 box-sizing:border-box;
