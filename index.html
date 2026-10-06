@@ -1084,9 +1084,11 @@ text = "A memory was saved";
 }
 
 const date = event.created_at
-? new Date(event.created_at).toLocaleString()
+? new Date(event.created_at).toLocaleString("en-ZA", {
+    timeZone: "Africa/Johannesburg"
+})
 : "";
-
+    
 return `
 <div style="
 margin-top:10px;
