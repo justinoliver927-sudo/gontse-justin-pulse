@@ -1100,71 +1100,128 @@ return [];
 
 function subscribeToPulseActivity(){
 
-if(!supabaseClient){
+    const statusText =
+        document.getElementById("statusText");
 
-console.error(
-"Cannot start realtime: Supabase unavailable."
-);
+    if(!supabaseClient){
 
-return;
+        console.error("❌ Supabase unavailable.");
+
+        statusText.textContent =
+            "REALTIME OFFLINE";
+
+        return;
+    }
+
+    statusText.textContent =
+        "REALTIME CONNECTING...";
+
+    console.log(
+        "🔄 Starting Supabase Realtime..."
+    );
+
+    supabaseClient
+        .channel("pulse-activity-live")
+
+        .on(
+            "postgres_changes",
+            {
+                event: "INSERT",
+                schema: "public",
+                table: "pulse_events"
+            },
+
+            async function(payload){
+
+                console.log(
+                    "🟢 REALTIME EVENT RECEIVED:",
+                    payload.new
+                );
+
+                statusText.textContent =
+                    "REALTIME LIVE";
+
+                await loadPulseEvents();
+
+                const activityList =
+                    document.getElementById(
+                        "pulseActivityList"
+                    );
+
+                if(activityList){
+
+                    activityList.style.transition =
+                        "0.3s";
+
+                    activityList.style.transform =
+                        "scale(1.03)";
+
+                    setTimeout(function(){
+
+                        activityList.style.transform =
+                            "scale(1)";
+
+                    },300);
+
+                }
+
+            }
+        )
+
+        .subscribe(function(status){
+
+            console.log(
+                "❤️ REALTIME STATUS:",
+                status
+            );
+
+            if(status === "SUBSCRIBED"){
+
+                statusText.textContent =
+                    "REALTIME LIVE";
+
+                console.log(
+                    "🟢 REALTIME CONNECTION ACTIVE"
+                );
+
+            }
+
+            else if(status === "CHANNEL_ERROR"){
+
+                statusText.textContent =
+                    "REALTIME ERROR";
+
+                console.error(
+                    "🔴 REALTIME CHANNEL ERROR"
+                );
+
+            }
+
+            else if(status === "TIMED_OUT"){
+
+                statusText.textContent =
+                    "REALTIME TIMEOUT";
+
+                console.error(
+                    "🟠 REALTIME TIMEOUT"
+                );
+
+            }
+
+            else if(status === "CLOSED"){
+
+                statusText.textContent =
+                    "REALTIME CLOSED";
+
+                console.error(
+                    "🔴 REALTIME CLOSED"
+                );
+
+            }
+
+        });
+
 }
-
-supabaseClient
-.channel("pulse-activity-live")
-
-.on(
-"postgres_changes",
-{
-event: "INSERT",
-schema: "public",
-table: "pulse_events"
-},
-function(payload){
-
-console.log(
-"🔴 LIVE pulse received:",
-payload.new
-);
-
-/* Reload the activity list */
-
-loadPulseEvents();
-
-/* Small visual notification */
-
-const activityList =
-document.getElementById(
-"pulseActivityList"
-);
-
-activityList.style.transition =
-"0.3s";
-
-activityList.style.transform =
-"scale(1.02)";
-
-setTimeout(function(){
-
-activityList.style.transform =
-"scale(1)";
-
-},300);
-
-}
-)
-
-.subscribe(function(status){
-
-console.log(
-"❤️ Realtime status:",
-status
-);
-
-});
-
-}
-
-
 /* =========================================================
 LOCAL COUNTER
 ========================================================= */
