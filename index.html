@@ -1064,7 +1064,7 @@ border:1px solid rgba(255,255,255,.08);
 font-weight:bold;
 color:#31ff91;
 ">
- {text}
+ ${text}
 </div>
 
 <div style="
@@ -1421,6 +1421,8 @@ await testSupabase();
 if(connected){
 
 await loadPulseEvents();
+
+subscribeToPulseActivity();
 
 }else{
 
