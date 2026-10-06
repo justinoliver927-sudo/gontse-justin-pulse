@@ -1,0 +1,1441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#07150e">
+<title>Gontse × Justin Pulse</title>
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+}
+
+body{
+min-height:100vh;
+font-family:Arial,Helvetica,sans-serif;
+color:white;
+background:
+radial-gradient(circle at 20% 10%,rgba(0,255,120,.15),transparent 30%),
+radial-gradient(circle at 80% 20%,rgba(255,40,80,.15),transparent 30%),
+linear-gradient(135deg,#020805,#07150e 45%,#18070b);
+overflow-x:hidden;
+}
+
+body::before{
+content:"";
+position:fixed;
+inset:0;
+background-image:
+linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+background-size:40px 40px;
+pointer-events:none;
+}
+
+body::after{
+content:"❤️ 💚 🤍 ❤️ 💚";
+position:fixed;
+left:0;
+right:0;
+bottom:-50px;
+text-align:center;
+font-size:22px;
+letter-spacing:30px;
+opacity:.08;
+animation:floatHearts 12s linear infinite;
+pointer-events:none;
+}
+
+@keyframes floatHearts{
+from{transform:translateY(0);}
+to{transform:translateY(-110vh);}
+}
+
+.app{
+position:relative;
+width:min(650px,94%);
+margin:auto;
+padding:30px 0 40px;
+}
+
+header{
+text-align:center;
+margin-bottom:25px;
+}
+
+.logo{
+font-size:clamp(28px,8vw,48px);
+font-weight:900;
+letter-spacing:4px;
+background:linear-gradient(
+90deg,
+#31ff91,
+#fff,
+#ff4265,
+#31ff91
+);
+background-size:300%;
+-webkit-background-clip:text;
+background-clip:text;
+color:transparent;
+animation:gradientMove 5s linear infinite;
+}
+
+@keyframes gradientMove{
+0%{background-position:0%;}
+100%{background-position:300%;}
+}
+
+.subtitle{
+margin-top:5px;
+letter-spacing:8px;
+color:#ddd;
+font-size:12px;
+}
+
+.status{
+display:inline-flex;
+align-items:center;
+gap:8px;
+margin-top:15px;
+padding:8px 14px;
+border:1px solid rgba(49,255,145,.4);
+border-radius:30px;
+background:rgba(0,50,25,.35);
+font-size:11px;
+letter-spacing:2px;
+transition:.3s;
+}
+
+.status-dot{
+width:8px;
+height:8px;
+border-radius:50%;
+background:#31ff91;
+box-shadow:0 0 15px #31ff91;
+}
+
+.status.offline{
+border-color:rgba(255,179,71,.4);
+}
+
+.status.offline .status-dot{
+background:#ffb347;
+box-shadow:0 0 15px #ffb347;
+}
+
+.hero{
+text-align:center;
+padding:35px 20px;
+border:1px solid rgba(255,255,255,.08);
+border-radius:28px;
+background:rgba(255,255,255,.035);
+box-shadow:0 20px 70px rgba(0,0,0,.35);
+backdrop-filter:blur(10px);
+}
+
+.pulse{
+width:150px;
+height:150px;
+margin:0 auto 25px;
+border-radius:50%;
+display:flex;
+align-items:center;
+justify-content:center;
+background:
+radial-gradient(
+circle,
+#fff 0 7%,
+#ff4265 9% 25%,
+#31ff91 45%,
+transparent 70%
+);
+animation:pulse 2s infinite;
+}
+
+@keyframes pulse{
+0%,100%{
+transform:scale(1);
+box-shadow:0 0 20px rgba(49,255,145,.25);
+}
+
+50%{
+transform:scale(1.08);
+box-shadow:0 0 60px rgba(255,66,101,.35);
+}
+}
+
+.heart{
+font-size:55px;
+animation:heartbeat 1.2s infinite;
+}
+
+@keyframes heartbeat{
+0%,100%{transform:scale(1);}
+15%{transform:scale(1.2);}
+30%{transform:scale(1);}
+45%{transform:scale(1.15);}
+}
+
+h1{
+font-size:30px;
+margin-bottom:12px;
+}
+
+.description{
+color:#cfcfcf;
+line-height:1.7;
+font-size:15px;
+margin-bottom:25px;
+}
+
+button{
+border:none;
+cursor:pointer;
+font-weight:bold;
+color:white;
+transition:.25s;
+}
+
+.main-btn{
+width:100%;
+padding:17px;
+border-radius:18px;
+font-size:16px;
+background:
+linear-gradient(
+90deg,
+#087b42,
+#d91e45,
+#087b42
+);
+background-size:200%;
+box-shadow:0 0 25px rgba(255,40,80,.2);
+animation:buttonGlow 4s infinite;
+}
+
+.main-btn:hover{
+transform:translateY(-2px) scale(1.01);
+}
+
+.main-btn:active{
+transform:scale(.97);
+}
+
+@keyframes buttonGlow{
+50%{
+background-position:100%;
+box-shadow:0 0 35px rgba(49,255,145,.25);
+}
+}
+
+.reveal{
+max-height:0;
+overflow:hidden;
+opacity:0;
+transition:.6s ease;
+}
+
+.reveal.open{
+max-height:500px;
+opacity:1;
+margin-top:20px;
+}
+
+.message{
+padding:22px;
+border-radius:20px;
+background:
+linear-gradient(
+135deg,
+rgba(0,100,50,.25),
+rgba(130,0,25,.25)
+);
+border:1px solid rgba(255,255,255,.1);
+line-height:1.7;
+color:#eee;
+}
+
+.pulseReceived{
+font-weight:bold;
+color:#31ff91;
+margin-bottom:8px;
+}
+
+.reveal-buttons{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:10px;
+margin-top:28px;
+}
+
+.reveal-btn{
+padding:14px 8px;
+border-radius:15px;
+background:rgba(255,255,255,.055);
+border:1px solid rgba(255,255,255,.1);
+font-size:12px;
+}
+
+.reveal-btn:hover{
+background:rgba(49,255,145,.12);
+transform:translateY(-2px);
+}
+
+.reveal-card{
+margin-top:10px;
+padding:18px;
+border-radius:18px;
+background:
+linear-gradient(
+135deg,
+rgba(49,255,145,.1),
+rgba(255,50,80,.1)
+);
+border:1px solid rgba(255,255,255,.08);
+color:#ddd;
+line-height:1.7;
+}
+
+.vault{
+margin-top:25px;
+padding:25px 20px;
+border-radius:25px;
+border:1px solid rgba(255,255,255,.1);
+background:
+linear-gradient(
+145deg,
+rgba(0,80,40,.18),
+rgba(100,0,25,.18)
+);
+}
+
+.vault-title{
+text-align:center;
+font-size:21px;
+letter-spacing:2px;
+margin-bottom:7px;
+}
+
+.vault-subtitle{
+text-align:center;
+color:#aaa;
+font-size:13px;
+margin-bottom:20px;
+}
+
+.vault-buttons{
+display:grid;
+gap:10px;
+}
+
+.vault-btn{
+padding:16px;
+border-radius:16px;
+background:rgba(255,255,255,.05);
+border:1px solid rgba(255,255,255,.1);
+font-size:14px;
+}
+
+.vault-btn:hover{
+transform:translateY(-2px);
+border-color:rgba(49,255,145,.4);
+}
+
+.vault-content{
+display:none;
+margin-top:15px;
+padding:20px;
+border-radius:18px;
+background:rgba(0,0,0,.25);
+border:1px solid rgba(255,255,255,.08);
+line-height:1.7;
+animation:appear .5s ease;
+}
+
+.vault-content.show{
+display:block;
+}
+
+@keyframes appear{
+from{
+opacity:0;
+transform:translateY(8px);
+}
+
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+textarea{
+width:100%;
+min-height:110px;
+margin-top:15px;
+padding:15px;
+border-radius:14px;
+border:1px solid rgba(255,255,255,.12);
+background:rgba(0,0,0,.35);
+color:white;
+resize:vertical;
+outline:none;
+font-family:inherit;
+}
+
+textarea:focus{
+border-color:#31ff91;
+}
+
+.save-answer{
+margin-top:10px;
+width:100%;
+padding:13px;
+border-radius:13px;
+background:#087b42;
+}
+
+.special{
+margin-top:25px;
+text-align:center;
+padding:25px 15px;
+border-radius:24px;
+background:
+linear-gradient(
+135deg,
+rgba(49,255,145,.08),
+rgba(255,66,101,.08)
+);
+border:1px solid rgba(255,255,255,.08);
+}
+
+.special-title{
+font-size:12px;
+letter-spacing:4px;
+color:#aaa;
+margin-bottom:12px;
+}
+
+.names{
+font-size:28px;
+font-weight:900;
+background:
+linear-gradient(
+90deg,
+#31ff91,
+#fff,
+#ff4265
+);
+-webkit-background-clip:text;
+background-clip:text;
+color:transparent;
+}
+
+.special p{
+margin-top:10px;
+color:#aaa;
+font-size:13px;
+}
+
+.counter{
+text-align:center;
+margin-top:25px;
+color:#999;
+font-size:12px;
+letter-spacing:2px;
+}
+
+.counter strong{
+display:block;
+margin-top:5px;
+font-size:28px;
+color:white;
+}
+
+footer{
+text-align:center;
+margin-top:35px;
+color:#555;
+font-size:10px;
+letter-spacing:3px;
+}
+
+.flash{
+position:fixed;
+inset:0;
+background:rgba(49,255,145,.08);
+pointer-events:none;
+animation:flash .6s ease forwards;
+z-index:20;
+}
+
+@keyframes flash{
+from{opacity:1;}
+to{opacity:0;}
+}
+
+@media(max-width:500px){
+
+.reveal-buttons{
+grid-template-columns:1fr;
+}
+
+.pulse{
+width:125px;
+height:125px;
+}
+
+.heart{
+font-size:45px;
+}
+
+h1{
+font-size:25px;
+}
+
+.logo{
+letter-spacing:2px;
+}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+
+<div class="logo">
+JUSTIN × GONTSE
+</div>
+
+<div class="subtitle">
+PULSE
+</div>
+
+<div class="status" id="connectionStatus">
+<span class="status-dot"></span>
+<span id="statusText">CONNECTING...</span>
+</div>
+
+</header>
+
+<main>
+
+<section class="hero">
+
+<div class="pulse">
+<div class="heart">❤️</div>
+</div>
+
+<h1>
+Thinking of you
+</h1>
+
+<p class="description">
+Some feelings don't need a long explanation.
+Sometimes one little button is enough to say
+"I miss you."
+</p>
+
+<button class="main-btn" id="missBtn">
+💚❤️ I MISS YOU ❤️💚
+</button>
+
+<div class="pulse-activity">
+<h3>❤️ Pulse Activity</h3>
+
+<div id="pulseActivityList">
+Loading pulse activity...
+</div>
+</div>
+
+
+<div class="reveal" id="missReveal">
+
+<div class="message">
+
+<div class="pulseReceived">
+❤️ Pulse received.
+</div>
+
+I just wanted this little space to hold a simple reminder:
+
+<br><br>
+
+You're someone who has meant something special to me,
+and sometimes I miss the conversations, laughs and moments
+we've shared.
+
+<br><br>
+
+No pressure. Just a feeling. 💚 ❤️ 🤍
+
+</div>
+
+</div>
+
+<div class="reveal-buttons">
+
+<button
+class="reveal-btn"
+onclick="reveal('memory')">
+🌿❤️ A MEMORY
+</button>
+
+<button
+class="reveal-btn"
+onclick="reveal('message')">
+🤍✨ A MESSAGE
+</button>
+
+<button
+class="reveal-btn"
+onclick="reveal('future')">
+❤️🚀 A LITTLE FUTURE
+</button>
+
+</div>
+
+<div class="reveal-card reveal" id="memory">
+
+There are certain moments that stay with you
+because of how they made you feel.
+
+<br><br>
+
+Not because everything was perfect,
+but because they were real. ❤️
+
+</div>
+
+<div class="reveal-card reveal" id="message">
+
+Whatever happens next, I hope you know that
+I appreciate the place you've had in my life.
+
+<br><br>
+
+Some connections are worth remembering. 💚
+
+</div>
+
+<div class="reveal-card reveal" id="future">
+
+Keep growing.
+
+<br><br>
+
+Keep becoming the people we're meant to become.
+
+<br><br>
+
+Maybe one day we'll look back at this little page
+and smile. 🤍
+
+</div>
+
+</section>
+
+<section class="vault">
+
+<div class="vault-title">
+🔐 SECRET VAULT
+</div>
+
+<div class="vault-subtitle">
+Three little things waiting to be opened.
+</div>
+
+<div class="vault-buttons">
+
+<button
+class="vault-btn"
+onclick="vaultReveal('missMe')">
+💌 OPEN WHEN YOU MISS ME
+</button>
+
+<button
+class="vault-btn"
+onclick="vaultReveal('lateNight')">
+🌙 LATE NIGHT THOUGHT
+</button>
+
+<button
+class="vault-btn"
+onclick="vaultReveal('question')">
+❤️ ONE QUESTION
+</button>
+
+</div>
+
+<div class="vault-content" id="missMe">
+
+<strong>💌 If you opened this...</strong>
+
+<br><br>
+
+Maybe you were thinking about me.
+
+<br><br>
+
+So here's your little reminder:
+
+<br><br>
+
+Whatever distance, time or silence happens,
+there are still moments worth remembering.
+
+<br><br>
+
+Take a breath, smile a little, and keep going. 💚❤️🤍
+
+</div>
+
+<div class="vault-content" id="lateNight">
+
+<strong>🌙 A late-night thought</strong>
+
+<br><br>
+
+Sometimes the quietest moments are when our
+thoughts become the loudest.
+
+<br><br>
+
+So if you're reading this late at night:
+
+<br><br>
+
+I hope tomorrow gives you something worth smiling about. ❤️
+
+</div>
+
+<div class="vault-content" id="question">
+
+<strong>❤️ One question</strong>
+
+<br><br>
+
+What's one memory between us that you would never
+want to forget?
+
+<textarea
+id="answer"
+placeholder="Write your answer here...">
+</textarea>
+
+<button
+class="save-answer"
+onclick="saveAnswer()">
+💾 SAVE MY ANSWER
+</button>
+
+<div
+id="savedAnswer"
+style="margin-top:12px;color:#31ff91;">
+</div>
+
+</div>
+
+</section>
+
+<section class="special">
+
+<div class="special-title">
+TWO NAMES. ONE LITTLE SPACE.
+</div>
+
+<div class="names">
+Justin × Gontse
+</div>
+
+<p>
+Built from an idea, a few memories, and a lot of meaning.
+</p>
+
+</section>
+
+<div class="counter">
+
+I MISS YOU PRESSES
+
+<strong id="counter">
+0
+</strong>
+
+</div>
+
+</main>
+
+<footer>
+
+GONTSE × JUSTIN PULSE
+
+<br><br>
+
+2026 • MADE WITH CODE
+
+</footer>
+
+</div>
+
+
+<script>
+
+/* =========================================================
+SUPABASE CONFIGURATION
+========================================================= */
+
+const SUPABASE_URL =
+"https://hdhdecuxbqovrxphvppx.supabase.co";
+
+const SUPABASE_PUBLISHABLE_KEY =
+"sb_publishable_ad-HMWrd6rvmKOxXDfyIuA_YK0CYyZ_";
+
+
+/* =========================================================
+SUPABASE CLIENT
+========================================================= */
+
+let supabaseClient = null;
+
+try {
+
+if (
+typeof window.supabase === "undefined" ||
+typeof window.supabase.createClient !== "function"
+) {
+
+throw new Error(
+"Supabase JavaScript library did not load."
+);
+
+}
+
+supabaseClient =
+window.supabase.createClient(
+SUPABASE_URL,
+SUPABASE_PUBLISHABLE_KEY
+);
+
+} catch(error) {
+
+console.error(
+"Supabase initialization failed:",
+error
+);
+
+}
+
+
+/* =========================================================
+CONNECTION STATUS
+========================================================= */
+
+function setConnectionStatus(connected){
+
+const status =
+document.getElementById("connectionStatus");
+
+const text =
+document.getElementById("statusText");
+
+if(connected){
+
+status.classList.remove("offline");
+
+text.textContent =
+"SUPABASE CONNECTED";
+
+}else{
+
+status.classList.add("offline");
+
+text.textContent =
+"LOCAL MODE";
+
+}
+
+}
+
+
+/* =========================================================
+SUPABASE CONNECTION TEST
+========================================================= */
+
+async function testSupabase(){
+
+if(!supabaseClient){
+
+setConnectionStatus(false);
+
+return false;
+
+}
+
+try{
+
+const result =
+await supabaseClient
+.from("pulse_events")
+.select("id")
+.limit(1);
+
+if(result.error){
+
+console.error(
+"Supabase connection test failed:",
+result.error
+);
+
+setConnectionStatus(false);
+
+return false;
+
+}
+
+console.log(
+"🟢 Supabase connected successfully."
+);
+
+setConnectionStatus(true);
+
+return true;
+
+}catch(error){
+
+console.error(
+"Supabase connection error:",
+error
+);
+
+setConnectionStatus(false);
+
+return false;
+
+}
+
+}
+
+
+/* =========================================================
+SAVE EVENT TO SUPABASE
+========================================================= */
+
+async function savePulseEvent(
+eventType,
+message = null
+) {
+if (!supabaseClient) {
+console.error("Supabase client is not available.");
+setConnectionStatus(false);
+return false;
+}
+
+try {
+const { data, error } = await supabaseClient
+.from("pulse_events")
+.insert([
+{
+event_type: eventType,
+message: message
+}
+ ])
+.select();
+
+if (error) {
+console.error("Supabase INSERT failed:", error);
+setConnectionStatus(false);
+return false;
+}
+
+console.log(
+"❤️ Event successfully saved to Supabase:",
+data
+);
+
+setConnectionStatus(true);
+return true;
+
+} catch (error) {
+console.error("Supabase save exception:", error);
+setConnectionStatus(false);
+return false;
+}
+}
+
+async function loadPulseEvents() {
+
+const activityList =
+document.getElementById("pulseActivityList");
+
+if (!supabaseClient) {
+
+activityList.innerHTML =
+"💾 Cloud connection unavailable.";
+
+return [];
+
+}
+
+try {
+
+const { data, error } =
+await supabaseClient
+.from("pulse_events")
+.select("*")
+.order("created_at", {
+ascending: false
+})
+.limit(20);
+
+if (error) {
+
+console.error(
+"Failed to load pulse events:",
+error
+);
+
+activityList.innerHTML =
+"⚠️ Could not load pulse activity.";
+
+return [];
+
+}
+
+console.log(
+"❤️ Pulse events loaded:",
+data
+);
+
+if (!data || data.length === 0) {
+
+activityList.innerHTML =
+"💚 No pulse activity yet.";
+
+return [];
+
+}
+
+
+/* DISPLAY EVENTS */
+
+activityList.innerHTML = data.map(event => {
+
+let icon = "❤️";
+let text = "Pulse received";
+
+if(event.event_type === "miss_you") {
+
+icon = "💚❤️";
+text = "I miss you was pressed";
+
+}
+
+if(event.event_type === "memory_answer") {
+
+icon = "💌";
+text = "A memory was saved";
+
+}
+
+const date = event.created_at
+? new Date(event.created_at).toLocaleString()
+: "";
+
+return `
+<div style="
+margin-top:10px;
+padding:14px;
+border-radius:14px;
+background:rgba(255,255,255,.05);
+border:1px solid rgba(255,255,255,.08);
+">
+
+<div style="
+font-weight:bold;
+color:#31ff91;
+">
+ {text}
+</div>
+
+<div style="
+font-size:11px;
+color:#999;
+margin-top:5px;
+">
+${date}
+</div>
+
+</div>
+`;
+
+}).join("");
+
+return data;
+
+} catch(error) {
+
+console.error(
+"Pulse events load exception:",
+error
+);
+
+activityList.innerHTML =
+"⚠️ Pulse activity unavailable.";
+
+return [];
+
+}
+
+}
+
+function subscribeToPulseActivity(){
+
+if(!supabaseClient){
+
+console.error(
+"Cannot start realtime: Supabase unavailable."
+);
+
+return;
+}
+
+supabaseClient
+.channel("pulse-activity-live")
+
+.on(
+"postgres_changes",
+{
+event: "INSERT",
+schema: "public",
+table: "pulse_events"
+},
+function(payload){
+
+console.log(
+"🔴 LIVE pulse received:",
+payload.new
+);
+
+/* Reload the activity list */
+
+loadPulseEvents();
+
+/* Small visual notification */
+
+const activityList =
+document.getElementById(
+"pulseActivityList"
+);
+
+activityList.style.transition =
+"0.3s";
+
+activityList.style.transform =
+"scale(1.02)";
+
+setTimeout(function(){
+
+activityList.style.transform =
+"scale(1)";
+
+},300);
+
+}
+)
+
+.subscribe(function(status){
+
+console.log(
+"❤️ Realtime status:",
+status
+);
+
+});
+
+}
+
+
+/* =========================================================
+LOCAL COUNTER
+========================================================= */
+
+let count =
+Number(
+localStorage.getItem("pulseCount")
+) || 0;
+
+document
+.getElementById("counter")
+.textContent = count;
+
+
+/* =========================================================
+MISS YOU BUTTON
+========================================================= */
+
+document
+.getElementById("missBtn")
+.addEventListener(
+"click",
+async function(){
+
+count++;
+
+localStorage.setItem(
+"pulseCount",
+count
+);
+
+document
+.getElementById("counter")
+.textContent = count;
+
+document
+.getElementById("missReveal")
+.classList.add("open");
+
+this.innerHTML =
+"❤️ I MISS YOU — SAVED ❤️";
+
+
+/* SAVE TO SUPABASE */
+
+const saved =
+await savePulseEvent(
+"miss_you",
+"I miss you button pressed"
+);
+
+if(saved){
+
+console.log(
+"☁️ Pulse saved to Supabase."
+);
+
+await loadPulseEvents();
+
+}else{
+
+console.log(
+"💾 Pulse saved locally because Supabase was unavailable."
+);
+
+}
+
+
+
+/* VIBRATION */
+
+if(navigator.vibrate){
+
+navigator.vibrate([
+120,
+80,
+180
+ ]);
+
+}
+
+
+/* SCREEN FLASH */
+
+const flash =
+document.createElement("div");
+
+flash.className = "flash";
+
+document.body.appendChild(flash);
+
+setTimeout(
+function(){
+
+flash.remove();
+
+},
+600
+);
+
+}
+);
+
+
+/* =========================================================
+REVEALS
+========================================================= */
+
+function reveal(id){
+
+const element =
+document.getElementById(id);
+
+if(element){
+
+element.classList.toggle("open");
+
+}
+
+}
+
+
+/* =========================================================
+SECRET VAULT
+========================================================= */
+
+function vaultReveal(id){
+
+const element =
+document.getElementById(id);
+
+if(element){
+
+element.classList.toggle("show");
+
+}
+
+if(navigator.vibrate){
+
+navigator.vibrate(70);
+
+}
+
+}
+
+
+/* =========================================================
+SAVE QUESTION ANSWER
+========================================================= */
+
+async function saveAnswer(){
+
+const answer =
+document
+.getElementById("answer")
+.value
+.trim();
+
+const saved =
+document.getElementById("savedAnswer");
+
+
+if(answer === ""){
+
+saved.style.color =
+"#ff4265";
+
+saved.textContent =
+"Write something first ❤️";
+
+return;
+
+}
+
+
+/* ALWAYS SAVE LOCALLY */
+
+localStorage.setItem(
+"gontseJustinAnswer",
+answer
+);
+
+
+/* ALSO SAVE TO SUPABASE */
+
+const success =
+await savePulseEvent(
+"memory_answer",
+answer
+);
+
+
+if(success){
+
+saved.style.color =
+"#31ff91";
+
+saved.textContent =
+"❤️ Your answer is saved.";
+
+}else{
+
+saved.style.color =
+"#ffb347";
+
+saved.textContent =
+"💾 Saved on this phone. Cloud connection unavailable.";
+
+}
+
+
+if(navigator.vibrate){
+
+navigator.vibrate([
+80,
+60,
+100
+ ]);
+
+}
+
+}
+
+
+/* =========================================================
+LOAD LOCAL ANSWER
+========================================================= */
+
+const savedAnswer =
+localStorage.getItem(
+"gontseJustinAnswer"
+);
+
+if(savedAnswer){
+
+document
+.getElementById("answer")
+.value = savedAnswer;
+
+}
+
+
+/* =========================================================
+START SUPABASE CONNECTION CHECK
+========================================================= */
+
+window.addEventListener(
+"load",
+async function(){
+
+const connected =
+await testSupabase();
+
+if(connected){
+
+await loadPulseEvents();
+
+}else{
+
+document.getElementById(
+"pulseActivityList"
+).innerHTML =
+"💾 Cloud connection unavailable.";
+
+}
+
+}
+);
+
+
+</script>
+
+</body>
+  </html>
