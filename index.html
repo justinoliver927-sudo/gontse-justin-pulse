@@ -800,7 +800,43 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
 "sb_publishable_ad-HMWrd6rvmKOxXDfyIuA_YK0CYyZ_";
 
+/* =========================================================
+DEVICE IDENTITY
+========================================================= */
 
+function getDeviceName(){
+
+    let deviceName =
+        localStorage.getItem("pulseDeviceName");
+
+    if(!deviceName){
+
+        deviceName = prompt(
+            "Who is using this device?\n\nType Justin or Gontse:"
+        );
+
+        if(
+            deviceName &&
+            deviceName.trim().toLowerCase() === "gontse"
+        ){
+
+            deviceName = "Gontse";
+
+        }else{
+
+            deviceName = "Justin";
+
+        }
+
+        localStorage.setItem(
+            "pulseDeviceName",
+            deviceName
+        );
+    }
+
+    return deviceName;
+}
+ 
 /* =========================================================
 SUPABASE CLIENT
 ========================================================= */
