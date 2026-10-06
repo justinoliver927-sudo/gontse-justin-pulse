@@ -1091,30 +1091,39 @@ const date = event.created_at
 return `
 <div style="
 margin-top:10px;
-padding:14px;
-border-radius:14px;
-background:rgba(255,255,255,.05);
-border:1px solid rgba(255,255,255,.08);
+padding:16px;
+border-radius:16px;
+background:linear-gradient(
+135deg,
+rgba(49,255,145,.08),
+rgba(255,255,255,.04)
+);
+border:1px solid rgba(49,255,145,.18);
+box-shadow:0 4px 15px rgba(0,0,0,.15);
 ">
 
 <div style="
+display:flex;
+align-items:center;
+gap:8px;
 font-weight:bold;
 color:#31ff91;
+font-size:15px;
 ">
- ${text}
+${icon}
+${text}
 </div>
 
 <div style="
 font-size:11px;
 color:#999;
-margin-top:5px;
+margin-top:7px;
 ">
 ${date}
 </div>
 
 </div>
 `;
-
 }).join("");
 
 return data;
