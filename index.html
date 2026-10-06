@@ -982,7 +982,7 @@ const { data, error } = await supabaseClient
 .insert([
 {
 event_type: eventType,
-message: message
+message: getDeviceName() + ": " + message
 }
  ])
 .select();
