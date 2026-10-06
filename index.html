@@ -972,8 +972,6 @@ return false;
 }
 }
 
-<script>
- 
 async function loadPulseEvents() {
 
 const activityList =
@@ -1102,123 +1100,69 @@ return [];
 
 function subscribeToPulseActivity(){
 
-  if(!supabaseClient){
-    console.error("❌ Cannot start realtime: Supabase unavailable.");
+if(!supabaseClient){
 
-    const status = document.getElementById("connectionStatus");
-    if(status){
-      status.textContent = "🔴 REALTIME OFFLINE";
-    }
+console.error(
+"Cannot start realtime: Supabase unavailable."
+);
 
-    return;
-  }
-
-  console.log("🔄 Starting live Pulse Activity...");
-
-  const status = document.getElementById("connectionStatus");
-
-  if(status){
-    status.textContent = "🟠 REALTIME CONNECTING...";
-  }
-
-  const channel =
-    supabaseClient
-    .channel("pulse-activity-live")
-
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "pulse_events"
-      },
-      async (payload) => {
-
-        console.log(
-          "❤️❤️❤️ LIVE PULSE RECEIVED:",
-          payload.new
-        );
-
-        if(status){
-          status.textContent = "🟢 REALTIME LIVE";
-        }
-
-        await loadPulseEvents();
-
-        const activityList =
-          document.getElementById("pulseActivityList");
-
-        if(activityList){
-
-          activityList.style.transition = "0.3s";
-          activityList.style.transform = "scale(1.03)";
-
-          setTimeout(() => {
-            activityList.style.transform = "scale(1)";
-          },300);
-
-        }
-      }
-    )
-
-    .subscribe((statusText) => {
-
-      console.log(
-        "❤️ Realtime status:",
-        statusText
-      );
-
-      if(statusText === "SUBSCRIBED"){
-
-        console.log(
-          "🟢 LIVE PULSE CONNECTION ACTIVE"
-        );
-
-        if(status){
-          status.textContent = "🟢 REALTIME LIVE";
-        }
-
-      }
-
-      else if(statusText === "CHANNEL_ERROR"){
-
-        console.error(
-          "🔴 Realtime channel error"
-        );
-
-        if(status){
-          status.textContent = "🔴 REALTIME ERROR";
-        }
-
-      }
-
-      else if(statusText === "TIMED_OUT"){
-
-        console.error(
-          "🟠 Realtime connection timed out"
-        );
-
-        if(status){
-          status.textContent = "🟠 REALTIME TIMEOUT";
-        }
-
-      }
-
-      else if(statusText === "CLOSED"){
-
-        console.log(
-          "🔴 Realtime connection closed"
-        );
-
-        if(status){
-          status.textContent = "🔴 REALTIME CLOSED";
-        }
-
-      }
-
-    });
+return;
 }
-</script>
+
+supabaseClient
+.channel("pulse-activity-live")
+
+.on(
+"postgres_changes",
+{
+event: "INSERT",
+schema: "public",
+table: "pulse_events"
+},
+function(payload){
+
+console.log(
+"🔴 LIVE pulse received:",
+payload.new
+);
+
+/* Reload the activity list */
+
+loadPulseEvents();
+
+/* Small visual notification */
+
+const activityList =
+document.getElementById(
+"pulseActivityList"
+);
+
+activityList.style.transition =
+"0.3s";
+
+activityList.style.transform =
+"scale(1.02)";
+
+setTimeout(function(){
+
+activityList.style.transform =
+"scale(1)";
+
+},300);
+
+}
+)
+
+.subscribe(function(status){
+
+console.log(
+"❤️ Realtime status:",
+status
+);
+
+});
+
+}
 
 
 /* =========================================================
@@ -1494,4 +1438,4 @@ document.getElementById(
 </script>
 
 </body>
-  </html>
+</html>
