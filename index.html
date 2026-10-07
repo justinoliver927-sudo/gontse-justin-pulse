@@ -522,13 +522,13 @@ letter-spacing:2px;
   
 <button onclick="OneSignalDeferred.push(async function(OneSignal) {
   try {
-    const permission = await OneSignal.Notifications.permission;
-    alert('OneSignal permission: ' + permission);
+    const id = await OneSignal.User.PushSubscription.id;
+    alert('Subscription ID: ' + id);
   } catch (error) {
-    alert('OneSignal error: ' + error);
+    alert('Error: ' + error);
   }
 })">
-  Check Pulse Notifications
+  Check Subscription
 </button>
   
 <div class="app">
