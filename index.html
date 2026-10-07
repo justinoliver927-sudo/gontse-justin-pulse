@@ -9,16 +9,25 @@
 <!-- SUPABASE -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<!-- ONESIGNAL -->
+<script
+  src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+  defer>
+</script>
+
 <script>
   window.OneSignalDeferred = window.OneSignalDeferred || [];
+
   OneSignalDeferred.push(async function(OneSignal) {
+
     await OneSignal.init({
       appId: "ca4cbfb1-b09e-449e-8e5e-caa7db29e02a",
-      safari_web_id: "web.onesignal.auto.220aec70-25f6-4973-9e9c-d6d04112ecc1",
+
       notifyButton: {
-        enable: true,
-      },
+        enable: true
+      }
     });
+
   });
 </script>
 <style>
@@ -519,17 +528,6 @@ letter-spacing:2px;
 </head>
 
 <body>
-  
-<button onclick="OneSignalDeferred.push(async function(OneSignal) {
-  try {
-    await OneSignal.User.PushSubscription.optIn();
-    alert('Opt-in requested. Refresh the page, then check OneSignal.');
-  } catch (error) {
-    alert('Error: ' + error);
-  }
-})">
-  Enable Pulse Notifications
-</button>
   
 <div class="app">
 
