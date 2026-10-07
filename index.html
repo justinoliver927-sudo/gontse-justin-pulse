@@ -1346,7 +1346,7 @@ await savePulseEvent(
 "I miss you button pressed"
 );
 
-if(savedEvent){
+if(savedEvent && supabaseClient){
 
 const { data: notificationResult, error: notificationError } =
 await supabaseClient.functions.invoke(
@@ -1374,8 +1374,7 @@ notificationResult
 
 }
 
-  }
-
+}
 
 if(saved){
 
