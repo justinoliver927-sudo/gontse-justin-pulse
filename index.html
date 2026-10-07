@@ -32,6 +32,10 @@
     enable: true
   }
 });
+    // Identify this browser as Justin or Gontse in OneSignal.
+const pulseUser = getDeviceName().toLowerCase();
+await OneSignal.login(pulseUser);
+console.log("🟢 OneSignal user identified as:", pulseUser);
 
   });
 </script>
