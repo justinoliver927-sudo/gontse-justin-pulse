@@ -1026,7 +1026,7 @@ data
 );
 
 setConnectionStatus(true);
-return true;
+return data?.[0] || null;
 
 } catch (error) {
 console.error("Supabase save exception:", error);
@@ -1340,11 +1340,42 @@ this.innerHTML =
 
 /* SAVE TO SUPABASE */
 
-const saved =
+const savedEvent =
 await savePulseEvent(
 "miss_you",
 "I miss you button pressed"
 );
+
+if(savedEvent){
+
+const { data: notificationResult, error: notificationError } =
+await supabaseClient.functions.invoke(
+"send-pulse-notification",
+{
+body: {
+record: savedEvent
+}
+}
+);
+
+if(notificationError){
+
+console.error(
+"🔴 Push notification failed:",
+notificationError
+);
+
+}else{
+
+console.log(
+"🔔 Push notification sent:",
+notificationResult
+);
+
+}
+
+  }
+
 
 if(saved){
 
