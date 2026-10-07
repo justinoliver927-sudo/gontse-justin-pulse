@@ -1547,6 +1547,26 @@ async function(){
 
 const connected =
 await testSupabase();
+  const pulseUser = getDeviceName().toLowerCase();
+
+if (window.OneSignal) {
+    try {
+        await window.OneSignal.login(pulseUser);
+
+        console.log(
+            "🟢 OneSignal user identified as:",
+            pulseUser
+        );
+
+    } catch(error) {
+
+        console.error(
+            "🔴 OneSignal identity failed:",
+            error
+        );
+
+    }
+}
 
 if(connected){
 
