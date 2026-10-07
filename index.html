@@ -519,7 +519,13 @@ letter-spacing:2px;
 </head>
 
 <body>
-
+  
+<button onclick="OneSignalDeferred.push(async function(OneSignal) {
+  await OneSignal.Slidedown.promptPush();
+})">
+  Enable Pulse Notifications
+</button>
+  
 <div class="app">
 
 <header>
