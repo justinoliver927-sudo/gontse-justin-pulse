@@ -1547,11 +1547,15 @@ async function(){
 
 const connected =
 await testSupabase();
-  const pulseUser = getDeviceName().toLowerCase();
 
-if (window.OneSignal) {
+  OneSignalDeferred.push(async function(OneSignal) {
+
+    const pulseUser =
+        getDeviceName().toLowerCase();
+
     try {
-        await window.OneSignal.login(pulseUser);
+
+        await OneSignal.login(pulseUser);
 
         console.log(
             "🟢 OneSignal user identified as:",
@@ -1566,7 +1570,8 @@ if (window.OneSignal) {
         );
 
     }
-}
+
+});
 
 if(connected){
 
