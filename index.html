@@ -521,9 +521,14 @@ letter-spacing:2px;
 <body>
   
 <button onclick="OneSignalDeferred.push(async function(OneSignal) {
-  await OneSignal.Slidedown.promptPush();
+  try {
+    const permission = await OneSignal.Notifications.permission;
+    alert('OneSignal permission: ' + permission);
+  } catch (error) {
+    alert('OneSignal error: ' + error);
+  }
 })">
-  Enable Pulse Notifications
+  Check Pulse Notifications
 </button>
   
 <div class="app">
