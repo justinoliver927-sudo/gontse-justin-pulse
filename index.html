@@ -19,19 +19,39 @@
 
   OneSignalDeferred.push(async function(OneSignal) {
 
-    await OneSignal.init({
-  appId: "ca4cbfb1-b09e-449e-8e5e-caa7db29e02a",
+  await OneSignal.init({
+    appId: "ca4cbfb1-b09e-449e-8e5e-caa7db29e02a",
 
-  // GitHub Pages project-site service worker configuration
-  serviceWorkerPath: "gontse-justin-pulse/OneSignalSDKWorker.js",
+    // GitHub Pages project-site service worker configuration
+    serviceWorkerPath: "gontse-justin-pulse/OneSignalSDKWorker.js",
 
-  notifyButton: {
-    enable: true
-  }
-});
-
-
+    notifyButton: {
+      enable: true
+    }
   });
+
+  const pulseUser =
+      getDeviceName().toLowerCase();
+
+  try {
+
+    await OneSignal.login(pulseUser);
+
+    console.log(
+      "🟢 OneSignal user identified as:",
+      pulseUser
+    );
+
+  } catch(error) {
+
+    console.error(
+      "🔴 OneSignal identity failed:",
+      error
+    );
+
+  }
+
+});
 </script>
 <style>
 *{
@@ -1575,30 +1595,7 @@ async function(){
 const connected =
 await testSupabase();
 
-  OneSignalDeferred.push(async function(OneSignal) {
 
-    const pulseUser =
-        getDeviceName().toLowerCase();
-
-    try {
-
-        await OneSignal.login(pulseUser);
-
-        console.log(
-            "🟢 OneSignal user identified as:",
-            pulseUser
-        );
-
-    } catch(error) {
-
-        console.error(
-            "🔴 OneSignal identity failed:",
-            error
-        );
-
-    }
-
-});
 
 if(connected){
 
