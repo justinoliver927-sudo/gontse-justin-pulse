@@ -1106,69 +1106,51 @@ return [];
 }
 
 
-/* DISPLAY EVENTS */
+/* DISPLAY EVENTS — safely display messages as text */
 
-activityList.innerHTML = data.map(event => {
+activityList.replaceChildren();
 
-let icon = "❤️";
-let text = "Pulse received";
+data.forEach(event => {
+    let icon = "❤️";
+    let text = "Pulse received";
 
-if(event.event_type === "miss_you") {
+    if (event.event_type === "miss_you") {
+        icon = "💚❤️";
+        text = event.message || "I miss you";
+    }
 
-icon = "💚❤️";
-text = event.message || "I miss you";
-}
+    if (event.event_type === "memory_answer") {
+        icon = "💌";
+        text = "A memory was saved";
+    }
 
-if(event.event_type === "memory_answer") {
+    const date = event.created_at
+        ? new Date(event.created_at).toLocaleString("en-ZA", {
+            timeZone: "Africa/Johannesburg"
+        })
+        : "";
 
-icon = "💌";
-text = "A memory was saved";
+    const card = document.createElement("div");
+    card.style.cssText =
+        "margin-top:10px;padding:16px;border-radius:16px;" +
+        "background:linear-gradient(135deg,rgba(49,255,145,.08)," +
+        "rgba(255,255,255,.04));border:1px solid rgba(49,255,145,.18);" +
+        "box-shadow:0 4px 15px rgba(0,0,0,.15);";
 
-}
+    const heading = document.createElement("div");
+    heading.style.cssText =
+        "display:flex;align-items:center;gap:8px;font-weight:bold;" +
+        "color:#31ff91;font-size:15px;";
+    heading.textContent = icon + " " + String(text);
 
-const date = event.created_at
-? new Date(event.created_at).toLocaleString("en-ZA", {
-    timeZone: "Africa/Johannesburg"
-})
-: "";
-    
-return `
-<div style="
-margin-top:10px;
-padding:16px;
-border-radius:16px;
-background:linear-gradient(
-135deg,
-rgba(49,255,145,.08),
-rgba(255,255,255,.04)
-);
-border:1px solid rgba(49,255,145,.18);
-box-shadow:0 4px 15px rgba(0,0,0,.15);
-">
+    const timestamp = document.createElement("div");
+    timestamp.style.cssText =
+        "font-size:11px;color:#999;margin-top:7px;";
+    timestamp.textContent = date;
 
-<div style="
-display:flex;
-align-items:center;
-gap:8px;
-font-weight:bold;
-color:#31ff91;
-font-size:15px;
-">
-${icon}
-${text}
-</div>
-
-<div style="
-font-size:11px;
-color:#999;
-margin-top:7px;
-">
-${date}
-</div>
-
-</div>
-`;
-}).join("");
+    card.append(heading, timestamp);
+    activityList.appendChild(card);
+});
 
 return data;
 
