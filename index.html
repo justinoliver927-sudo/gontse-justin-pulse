@@ -593,6 +593,17 @@ Sometimes one little button is enough to say
 💚❤️ I MISS YOU ❤️💚
 </button>
 
+  
+<button
+  type="button"
+  id="whatsappBtn"
+  class="main-btn"
+  style="margin-top:12px;background:linear-gradient(90deg,#128C7E,#25D366);animation:none;"
+>
+  💬 SEND A WHATSAPP MESSAGE
+</button>
+
+
 <div class="pulse-activity">
 <h3>❤️ Pulse Activity</h3>
 
@@ -1427,6 +1438,20 @@ flash.remove();
 }
 );
 
+
+/* =========================================================
+WHATSAPP MESSAGE BUTTON
+========================================================= */
+
+document
+  .getElementById("whatsappBtn")
+  .addEventListener("click", function () {
+    const message = "Hey thinking of you ,I miss you 🤷🏽‍♂️";
+    const whatsappUrl =
+      "https://wa.me/?text=" + encodeURIComponent(message);
+
+    window.open(whatsappUrl, "_blank");
+  });
 
 /* =========================================================
 REVEALS
