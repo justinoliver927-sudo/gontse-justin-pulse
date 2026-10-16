@@ -29,28 +29,7 @@
       enable: true
     }
   });
-
-  const pulseUser =
-      getDeviceName().toLowerCase();
-
-  try {
-
-    await OneSignal.login(pulseUser);
-
-    console.log(
-      "🟢 OneSignal user identified as:",
-      pulseUser
-    );
-
-  } catch(error) {
-
-    console.error(
-      "🔴 OneSignal identity failed:",
-      error
-    );
-
-  }
-
+  
 });
 </script>
 <style>
@@ -547,6 +526,88 @@ font-size:25px;
 letter-spacing:2px;
 }
 }
+  
+.auth-panel {
+  max-width: 520px;
+  margin: 24px auto;
+  padding: 22px;
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  border-radius: 18px;
+  background: rgba(10, 25, 18, 0.96);
+  color: #fff;
+  box-sizing: border-box;
+}
+
+.auth-panel h2 {
+  margin-top: 0;
+  color: #86efac;
+}
+
+.auth-panel p {
+  line-height: 1.5;
+}
+
+.auth-panel label {
+  display: block;
+  margin: 14px 0 6px;
+}
+
+.auth-input {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #52715e;
+  border-radius: 10px;
+  background: #101b14;
+  color: #fff;
+  box-sizing: border-box;
+  font: inherit;
+}
+
+.auth-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.auth-btn {
+  padding: 11px 14px;
+  border: 1px solid #4ade80;
+  border-radius: 10px;
+  background: #173c27;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.auth-btn:hover {
+  background: #245a39;
+}
+
+.auth-message {
+  overflow-wrap: anywhere;
+  color: #d1fae5;
+}
+
+.app:not(.pulse-authorized) main {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .auth-panel {
+    margin: 16px 10px;
+    padding: 16px;
+  }
+
+  .auth-actions {
+    flex-direction: column;
+  }
+
+  .auth-btn {
+    width: 100%;
+  }
+}
 </style>
 </head>
 
@@ -571,7 +632,55 @@ PULSE
 
 </header>
 
-<main>
+
+<section class="auth-panel" id="authPanel">
+  <h2>💚 Private Pulse Access</h2>
+  <p>Sign in with your approved Justin or Gontse account.</p>
+
+  <form id="authForm">
+    <label for="authEmail">Email address</label>
+    <input
+      class="auth-input"
+      id="authEmail"
+      type="email"
+      autocomplete="email"
+      placeholder="Enter your email"
+      required
+    >
+
+    <label for="authPassword">Password</label>
+    <input
+      class="auth-input"
+      id="authPassword"
+      type="password"
+      autocomplete="current-password"
+      placeholder="Enter your password"
+      minlength="6"
+      required
+    >
+
+    <div class="auth-actions">
+      <button class="auth-btn" id="signInBtn" type="submit">
+        Sign In
+      </button>
+      <button class="auth-btn" id="signUpBtn" type="button">
+        Create Account
+      </button>
+      <button class="auth-btn" id="resetPasswordBtn" type="button">
+        Reset Password
+      </button>
+      <button class="auth-btn" id="signOutBtn" type="button" hidden>
+        Sign Out
+      </button>
+    </div>
+
+    <p class="auth-message" id="authMessage" role="status" aria-live="polite">
+      Your account must be approved before Pulse features unlock.
+    </p>
+  </form>
+</section>
+
+  <main>
 
 <section class="hero">
 
@@ -844,42 +953,17 @@ const SUPABASE_URL =
 const SUPABASE_PUBLISHABLE_KEY =
 "sb_publishable_ad-HMWrd6rvmKOxXDfyIuA_YK0CYyZ_";
 
+
 /* =========================================================
-DEVICE IDENTITY
+AUTHENTICATED DEVICE IDENTITY
 ========================================================= */
 
-function getDeviceName(){
+let pulseDisplayName = null;
 
-    let deviceName =
-        localStorage.getItem("pulseDeviceName");
-
-    if(!deviceName){
-
-        deviceName = prompt(
-            "Who is using this device?\n\nType Justin or Gontse:"
-        );
-
-        if(
-            deviceName &&
-            deviceName.trim().toLowerCase() === "gontse"
-        ){
-
-            deviceName = "Gontse";
-
-        }else{
-
-            deviceName = "Justin";
-
-        }
-
-        localStorage.setItem(
-            "pulseDeviceName",
-            deviceName
-        );
-    }
-
-    return deviceName;
+function getDeviceName() {
+    return pulseDisplayName || "";
 }
+
  
 /* =========================================================
 SUPABASE CLIENT
@@ -917,6 +1001,248 @@ error
 
 
 /* =========================================================
+PULSE AUTHENTICATION
+========================================================= */
+
+let pulseAuthSubscription = null;
+let pulseRealtimeChannel = null;
+let pulseAuthSequence = 0;
+
+function showAuthMessage(message) {
+    const element = document.getElementById("authMessage");
+    if (element) element.textContent = message;
+}
+
+async function identifyApprovedPulseUser() {
+    if (!pulseDisplayName) return;
+
+    const pulseUser = pulseDisplayName.toLowerCase();
+
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    window.OneSignalDeferred.push(async function (OneSignal) {
+        try {
+            await OneSignal.login(pulseUser);
+            console.log("Approved Pulse notification identity connected.");
+        } catch (error) {
+            console.error("OneSignal identity failed:", error);
+        }
+    });
+}
+
+async function clearPulseAccess() {
+    pulseDisplayName = null;
+    document.querySelector(".app")?.classList.remove("pulse-authorized");
+
+    if (pulseRealtimeChannel && supabaseClient) {
+    const channelToRemove = pulseRealtimeChannel;
+    pulseRealtimeChannel = null;
+
+    try {
+        await supabaseClient.removeChannel(channelToRemove);
+    } catch (error) {
+        console.warn("Realtime channel cleanup failed:", error);
+    }
+}
+
+    const signOutButton = document.getElementById("signOutBtn");
+    if (signOutButton) signOutButton.hidden = true;
+}
+
+async function applyPulseSession(session) {
+    const currentSequence = ++pulseAuthSequence;
+    await clearPulseAccess();
+
+    if (currentSequence !== pulseAuthSequence) return;
+
+    if (!session || !session.user) {
+        showAuthMessage("Sign in with your approved Justin or Gontse account.");
+        return;
+    }
+
+    const user = session.user;
+
+    if (!user.email_confirmed_at) {
+        showAuthMessage("Please confirm your email before accessing Pulse.");
+        return;
+    }
+
+    if (!supabaseClient) {
+        showAuthMessage("Cloud connection unavailable. Please try again later.");
+        return;
+    }
+
+    const { data: member, error } = await supabaseClient
+        .from("pulse_members")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+ if (currentSequence !== pulseAuthSequence) return;
+
+    if (error) {
+        console.error("Pulse membership check failed:", error);
+        showAuthMessage("We couldn't verify your approval. Please try again.");
+        return;
+    }
+
+    if (!member || !["Justin", "Gontse"].includes(member.display_name)) {
+    showAuthMessage(
+        "Your email is signed in, but Pulse access still needs owner approval."
+    );
+    return;
+}
+
+if (currentSequence !== pulseAuthSequence) return;
+
+pulseDisplayName = member.display_name;
+document.querySelector(".app")?.classList.add("pulse-authorized");
+
+    const signOutButton = document.getElementById("signOutBtn");
+    if (signOutButton) signOutButton.hidden = false;
+
+    showAuthMessage("Welcome, " + pulseDisplayName + ". Pulse access verified.");
+
+    await identifyApprovedPulseUser();
+
+    const connected = await testSupabase();
+
+if (currentSequence !== pulseAuthSequence) return;
+
+if (connected) {
+    await loadPulseEvents();
+
+    if (currentSequence !== pulseAuthSequence) return;
+    if (!pulseDisplayName) return;
+
+    subscribeToPulseActivity();
+} else {
+        const activityList = document.getElementById("pulseActivityList");
+        if (activityList) {
+            activityList.textContent = "Cloud connection unavailable.";
+        }
+    }
+}
+
+async function setupPulseAuthentication() {
+    if (!supabaseClient) {
+        showAuthMessage("Supabase could not start. Refresh and try again.");
+        return;
+    }
+
+    const authForm = document.getElementById("authForm");
+    const emailInput = document.getElementById("authEmail");
+    const passwordInput = document.getElementById("authPassword");
+    const signUpButton = document.getElementById("signUpBtn");
+    const resetButton = document.getElementById("resetPasswordBtn");
+    const signOutButton = document.getElementById("signOutBtn");
+
+    if (!authForm || !emailInput || !passwordInput) {
+        console.error("Pulse authentication form is missing.");
+        return;
+    }
+
+    authForm.addEventListener("submit", async function (event) {
+        event.preventDefault();
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        const { error } = await supabaseClient.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) {
+            showAuthMessage(error.message);
+            return;
+        }
+
+        showAuthMessage("Signed in. Verifying Pulse access...");
+    });
+
+    signUpButton?.addEventListener("click", async function () {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!email || password.length < 6) {
+            showAuthMessage("Enter your email and a password of at least 6 characters.");
+            return;
+        }
+
+        const { error } = await supabaseClient.auth.signUp({
+            email,
+            password,
+            options: {
+                emailRedirectTo: window.location.origin + window.location.pathname
+            }
+        });
+
+        if (error) {
+            showAuthMessage(error.message);
+            return;
+        }
+
+        showAuthMessage(
+            "Account created. Confirm your email, then ask the project owner to approve your Pulse membership."
+        );
+    });
+
+    resetButton?.addEventListener("click", async function () {
+        const email = emailInput.value.trim();
+
+        if (!email) {
+            showAuthMessage("Enter your email address first.");
+            return;
+        }
+
+        const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+            redirectTo: window.location.origin + window.location.pathname
+        });
+
+        showAuthMessage(
+            error ? error.message : "If an account exists for that email, a reset link will be sent."
+        );
+    });
+
+    signOutButton?.addEventListener("click", async function () {
+        const { error } = await supabaseClient.auth.signOut();
+
+        if (error) {
+            showAuthMessage("Sign-out failed. Please try again.");
+            return;
+        }
+
+         showAuthMessage("You have signed out.");
+    });
+
+   const { data: listener } = supabaseClient.auth.onAuthStateChange(
+    function (event, session) {
+        if (
+            event === "INITIAL_SESSION" ||
+            event === "SIGNED_IN" ||
+            event === "SIGNED_OUT" ||
+            event === "USER_UPDATED"
+        ) {
+            setTimeout(function () {
+                applyPulseSession(session);
+            }, 0);
+        }
+
+        if (event === "SIGNED_OUT") {
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            window.OneSignalDeferred.push(async function (OneSignal) {
+                try {
+                    await OneSignal.logout();
+                } catch (error) {
+                    console.warn("OneSignal logout was unavailable.");
+                }
+            });
+        }
+    }
+);
+pulseAuthSubscription = listener.subscription;
+}
+
+/* =========================================================
 CONNECTION STATUS
 ========================================================= */
 
@@ -940,7 +1266,7 @@ text.textContent =
 status.classList.add("offline");
 
 text.textContent =
-"LOCAL MODE";
+"SUPABASE OFFLINE";
 
 }
 
@@ -1006,211 +1332,195 @@ return false;
 }
 
 
+
 /* =========================================================
 SAVE EVENT TO SUPABASE
 ========================================================= */
 
-async function savePulseEvent(
-eventType,
-message = null
-) {
-if (!supabaseClient) {
-console.error("Supabase client is not available.");
-setConnectionStatus(false);
-return false;
+async function savePulseEvent(eventType, message = null) {
+    if (!supabaseClient) {
+        console.error("Supabase client is not available.");
+        setConnectionStatus(false);
+        return false;
+    }
+
+    if (!pulseDisplayName) {
+        console.warn("Pulse event blocked: no approved member identity.");
+        showAuthMessage("Please sign in with an approved Pulse account.");
+        return false;
+    }
+
+    if (!["miss_you", "memory_answer"].includes(eventType)) {
+    console.error("Invalid Pulse event type.");
+    return false;
 }
 
-try {
-const { data, error } = await supabaseClient
-.from("pulse_events")
-.insert([
-{
-event_type: eventType,
-message: getDeviceName() + ": " + message
-}
- ])
-.select();
+    const eventMessage =
+        pulseDisplayName + ": " + String(message ?? "");
 
-if (error) {
-console.error("Supabase INSERT failed:", error);
-setConnectionStatus(false);
-return false;
+    if (eventMessage.length > 500) {
+        showAuthMessage("Your Pulse message is too long.");
+        return false;
+    }
+
+    try {
+        const { data, error } = await supabaseClient
+            .from("pulse_events")
+            .insert({
+                event_type: eventType,
+                message: eventMessage
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Supabase INSERT failed:", error);
+            setConnectionStatus(false);
+            return false;
+        }
+
+        console.log("Pulse event saved successfully.");
+
+        setConnectionStatus(true);
+        return data || false;
+
+    } catch (error) {
+        console.error("Supabase save exception:", error);
+        setConnectionStatus(false);
+        return false;
+    }
 }
 
-console.log(
-"❤️ Event successfully saved to Supabase:",
-data
-);
-
-setConnectionStatus(true);
-return data?.[0] || null;
-
-} catch (error) {
-console.error("Supabase save exception:", error);
-setConnectionStatus(false);
-return false;
-}
-}
 
 async function loadPulseEvents() {
+    const activityList = document.getElementById("pulseActivityList");
 
-const activityList =
-document.getElementById("pulseActivityList");
+    if (!activityList) {
+        console.error("Pulse activity list element is missing.");
+        return [];
+    }
 
-if (!supabaseClient) {
+    if (!supabaseClient) {
+        activityList.textContent = "💾 Cloud connection unavailable.";
+        return [];
+    }
 
-activityList.innerHTML =
-"💾 Cloud connection unavailable.";
+    try {
+        const { data, error } = await supabaseClient
+            .from("pulse_events")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(20);
 
-return [];
+        if (error) {
+            console.error("Failed to load pulse events:", error);
+            activityList.textContent = "⚠️ Could not load pulse activity.";
+            return [];
+        }
 
+        if (!data || data.length === 0) {
+            activityList.textContent = "💚 No pulse activity yet.";
+            return [];
+        }
+
+        // Build cards with DOM methods; never insert database messages as HTML.
+        const fragment = document.createDocumentFragment();
+
+        data.forEach(function (event) {
+            let icon = "❤️";
+            let message = "Pulse received";
+
+            if (event.event_type === "miss_you") {
+                icon = "💚❤️";
+                message = "I miss you";
+            } else if (event.event_type === "memory_answer") {
+                icon = "💌";
+                message = "A memory was saved";
+            }
+
+            const card = document.createElement("div");
+            card.style.cssText = `
+                margin-top: 10px;
+                padding: 16px;
+                border-radius: 16px;
+                background: linear-gradient(
+                    135deg,
+                    rgba(49,255,145,.08),
+                    rgba(255,255,255,.04)
+                );
+                border: 1px solid rgba(49,255,145,.18);
+                box-shadow: 0 4px 15px rgba(0,0,0,.15);
+            `;
+
+            const heading = document.createElement("div");
+            heading.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-weight: bold;
+                color: #31ff91;
+                font-size: 15px;
+                overflow-wrap: anywhere;
+            `;
+
+            const iconSpan = document.createElement("span");
+            iconSpan.textContent = icon;
+
+            const messageSpan = document.createElement("span");
+            messageSpan.textContent = message;
+
+            heading.append(iconSpan, messageSpan);
+
+            const dateElement = document.createElement("div");
+            dateElement.style.cssText = `
+                font-size: 11px;
+                color: #999;
+                margin-top: 7px;
+            `;
+
+            dateElement.textContent = event.created_at
+                ? new Date(event.created_at).toLocaleString("en-ZA", {
+                    timeZone: "Africa/Johannesburg"
+                })
+                : "";
+
+            card.append(heading, dateElement);
+            fragment.appendChild(card);
+        });
+
+        activityList.replaceChildren(fragment);
+        return data;
+
+    } catch (error) {
+        console.error("Pulse activity load exception:", error);
+        activityList.textContent = "⚠️ Pulse activity unavailable.";
+        return [];
+    }
 }
 
-try {
-
-const { data, error } =
-await supabaseClient
-.from("pulse_events")
-.select("*")
-.order("created_at", {
-ascending: false
-})
-.limit(20);
-
-if (error) {
-
-console.error(
-"Failed to load pulse events:",
-error
-);
-
-activityList.innerHTML =
-"⚠️ Could not load pulse activity.";
-
-return [];
-
-}
-
-console.log(
-"❤️ Pulse events loaded:",
-data
-);
-
-if (!data || data.length === 0) {
-
-activityList.innerHTML =
-"💚 No pulse activity yet.";
-
-return [];
-
-}
 
 
-/* DISPLAY EVENTS */
+async function subscribeToPulseActivity() {
+    const statusText = document.getElementById("statusText");
 
-activityList.innerHTML = data.map(event => {
-
-let icon = "❤️";
-let text = "Pulse received";
-
-if(event.event_type === "miss_you") {
-
-icon = "💚❤️";
-text = event.message || "I miss you";
-}
-
-if(event.event_type === "memory_answer") {
-
-icon = "💌";
-text = "A memory was saved";
-
-}
-
-const date = event.created_at
-? new Date(event.created_at).toLocaleString("en-ZA", {
-    timeZone: "Africa/Johannesburg"
-})
-: "";
-    
-return `
-<div style="
-margin-top:10px;
-padding:16px;
-border-radius:16px;
-background:linear-gradient(
-135deg,
-rgba(49,255,145,.08),
-rgba(255,255,255,.04)
-);
-border:1px solid rgba(49,255,145,.18);
-box-shadow:0 4px 15px rgba(0,0,0,.15);
-">
-
-<div style="
-display:flex;
-align-items:center;
-gap:8px;
-font-weight:bold;
-color:#31ff91;
-font-size:15px;
-">
-${icon}
-${text}
-</div>
-
-<div style="
-font-size:11px;
-color:#999;
-margin-top:7px;
-">
-${date}
-</div>
-
-</div>
-`;
-}).join("");
-
-return data;
-
-} catch(error) {
-
-console.error(
-"Pulse events load exception:",
-error
-);
-
-activityList.innerHTML =
-"⚠️ Pulse activity unavailable.";
-
-return [];
-
-}
-
-}
-
-function subscribeToPulseActivity(){
-
-    const statusText =
-        document.getElementById("statusText");
-
-    if(!supabaseClient){
-
-        console.error("❌ Supabase unavailable.");
-
-        statusText.textContent =
-            "REALTIME OFFLINE";
-
+    if (!supabaseClient || !pulseDisplayName) {
+        if (statusText) statusText.textContent = "REALTIME OFFLINE";
         return;
     }
 
-    statusText.textContent =
-        "REALTIME CONNECTING...";
+    if (pulseRealtimeChannel) {
+    const previousChannel = pulseRealtimeChannel;
+    pulseRealtimeChannel = null;
 
-    console.log(
-        "🔄 Starting Supabase Realtime..."
-    );
+    try {
+        await supabaseClient.removeChannel(previousChannel);
+    } catch (error) {
+        console.warn("Previous realtime channel cleanup failed:", error);
+    }
+}
+    if (statusText) statusText.textContent = "REALTIME CONNECTING...";
 
-    supabaseClient
+    pulseRealtimeChannel = supabaseClient
         .channel("pulse-activity-live")
 
         .on(
@@ -1220,98 +1530,42 @@ function subscribeToPulseActivity(){
                 schema: "public",
                 table: "pulse_events"
             },
+            async function () {
+                if (!pulseDisplayName) return;
 
-            async function(payload){
-
-                console.log(
-                    "🟢 REALTIME EVENT RECEIVED:",
-                    payload.new
-                );
-
-                statusText.textContent =
-                    "REALTIME LIVE";
+                if (statusText) statusText.textContent = "REALTIME LIVE";
 
                 await loadPulseEvents();
 
-                const activityList =
-                    document.getElementById(
-                        "pulseActivityList"
-                    );
+                const activityList = document.getElementById("pulseActivityList");
 
-                if(activityList){
+                if (activityList) {
+                    activityList.style.transition = "0.3s";
+                    activityList.style.transform = "scale(1.03)";
 
-                    activityList.style.transition =
-                        "0.3s";
-
-                    activityList.style.transform =
-                        "scale(1.03)";
-
-                    setTimeout(function(){
-
-                        activityList.style.transform =
-                            "scale(1)";
-
-                    },300);
-
+                    setTimeout(function () {
+                        activityList.style.transform = "scale(1)";
+                    }, 300);
                 }
-
             }
         )
 
-        .subscribe(function(status){
+        .subscribe(function (status) {
+            if (!statusText) return;
 
-            console.log(
-                "❤️ REALTIME STATUS:",
-                status
-            );
-
-            if(status === "SUBSCRIBED"){
-
-                statusText.textContent =
-                    "REALTIME LIVE";
-
-                console.log(
-                    "🟢 REALTIME CONNECTION ACTIVE"
-                );
-
+            if (status === "SUBSCRIBED") {
+                statusText.textContent = "REALTIME LIVE";
+            } else if (status === "CHANNEL_ERROR") {
+                statusText.textContent = "REALTIME ERROR";
+                console.error("Realtime channel error.");
+            } else if (status === "TIMED_OUT") {
+                statusText.textContent = "REALTIME TIMEOUT";
+            } else if (status === "CLOSED") {
+                statusText.textContent = "REALTIME CLOSED";
             }
-
-            else if(status === "CHANNEL_ERROR"){
-
-                statusText.textContent =
-                    "REALTIME ERROR";
-
-                console.error(
-                    "🔴 REALTIME CHANNEL ERROR"
-                );
-
-            }
-
-            else if(status === "TIMED_OUT"){
-
-                statusText.textContent =
-                    "REALTIME TIMEOUT";
-
-                console.error(
-                    "🟠 REALTIME TIMEOUT"
-                );
-
-            }
-
-            else if(status === "CLOSED"){
-
-                statusText.textContent =
-                    "REALTIME CLOSED";
-
-                console.error(
-                    "🔴 REALTIME CLOSED"
-                );
-
-            }
-
         });
-
 }
+
 /* =========================================================
 LOCAL COUNTER
 ========================================================= */
@@ -1326,124 +1580,84 @@ document
 .textContent = count;
 
 
+
 /* =========================================================
 MISS YOU BUTTON
 ========================================================= */
 
-document
-.getElementById("missBtn")
-.addEventListener(
-"click",
-async function(){
+document.getElementById("missBtn").addEventListener(
+    "click",
+    async function () {
+        if (!pulseDisplayName) {
+            showAuthMessage("Please sign in with an approved Pulse account.");
+            return;
+        }
 
-count++;
+        const button = this;
+        button.disabled = true;
+        button.textContent = "Sending Pulse...";
 
-localStorage.setItem(
-"pulseCount",
-count
+        try {
+            const savedEvent = await savePulseEvent(
+                "miss_you",
+                "I miss you button pressed"
+            );
+
+            if (!savedEvent) {
+                button.textContent = "❤️ I MISS YOU ❤️";
+                showAuthMessage("Pulse could not be saved. Please try again.");
+                return;
+            }
+
+            count++;
+            localStorage.setItem("pulseCount", count);
+
+            document.getElementById("counter").textContent = count;
+            document.getElementById("missReveal").classList.add("open");
+            button.textContent = "❤️ I MISS YOU — SAVED ❤️";
+
+            await loadPulseEvents();
+
+            const { error: notificationError } =
+                await supabaseClient.functions.invoke(
+                    "send-pulse-notification",
+                    {
+                        body: { record: savedEvent }
+                    }
+                );
+
+            if (notificationError) {
+                console.error("Push notification failed:", notificationError);
+                showAuthMessage(
+                    "Pulse was saved, but the notification could not be sent."
+                );
+            } else {
+                showAuthMessage("Your Pulse was saved successfully.");
+            }
+
+            if (navigator.vibrate) {
+                navigator.vibrate([120, 80, 180]);
+            }
+
+            const flash = document.createElement("div");
+            flash.className = "flash";
+            document.body.appendChild(flash);
+
+            setTimeout(function () {
+                flash.remove();
+            }, 600);
+
+        } catch (error) {
+            console.error("I MISS YOU action failed:", error);
+            showAuthMessage("Something went wrong. Please try again.");
+            button.textContent = "❤️ I MISS YOU ❤️";
+
+        } finally {
+            button.disabled = false;
+        }
+    }
 );
 
-document
-.getElementById("counter")
-.textContent = count;
-
-document
-.getElementById("missReveal")
-.classList.add("open");
-
-this.innerHTML =
-"❤️ I MISS YOU — SAVED ❤️";
-
-
-/* SAVE TO SUPABASE */
-
-const savedEvent =
-await savePulseEvent(
-"miss_you",
-"I miss you button pressed"
-);
-
-if(savedEvent && supabaseClient){
-
-const { data: notificationResult, error: notificationError } =
-await supabaseClient.functions.invoke(
-"send-pulse-notification",
-{
-body: {
-record: savedEvent
-}
-}
-);
-
-if(notificationError){
-
-console.error(
-"🔴 Push notification failed:",
-notificationError
-);
-
-}else{
-
-console.log(
-"🔔 Push notification sent:",
-notificationResult
-);
-
-}
-
-}
-
-if(savedEvent){
-
-console.log(
-"☁️ Pulse saved to Supabase."
-);
-
-await loadPulseEvents();
-
-}else{
-
-console.log(
-"💾 Pulse saved locally because Supabase was unavailable."
-);
-
-}
-
-
-
-/* VIBRATION */
-
-if(navigator.vibrate){
-
-navigator.vibrate([
-120,
-80,
-180
- ]);
-
-}
-
-
-/* SCREEN FLASH */
-
-const flash =
-document.createElement("div");
-
-flash.className = "flash";
-
-document.body.appendChild(flash);
-
-setTimeout(
-function(){
-
-flash.remove();
-
-},
-600
-);
-
-}
-);
 
 
 /* =========================================================
@@ -1488,132 +1702,54 @@ navigator.vibrate(70);
 }
 
 
+
 /* =========================================================
 SAVE QUESTION ANSWER
 ========================================================= */
 
-async function saveAnswer(){
+async function saveAnswer() {
+    const answer = document.getElementById("answer").value.trim();
+    const saved = document.getElementById("savedAnswer");
 
-const answer =
-document
-.getElementById("answer")
-.value
-.trim();
+    if (!pulseDisplayName) {
+        saved.style.color = "#ff4265";
+        saved.textContent = "Please sign in with an approved Pulse account ❤️";
+        showAuthMessage("Sign in to use the Secret Vault.");
+        return;
+    }
 
-const saved =
-document.getElementById("savedAnswer");
+    if (answer === "") {
+        saved.style.color = "#ff4265";
+        saved.textContent = "Write something first ❤️";
+        return;
+    }
 
+    const success = await savePulseEvent("memory_answer", answer);
 
-if(answer === ""){
+    if (success) {
+        saved.style.color = "#31ff91";
+        saved.textContent = "❤️ Your answer was saved to shared Pulse activity.";
+        document.getElementById("answer").value = "";
 
-saved.style.color =
-"#ff4265";
-
-saved.textContent =
-"Write something first ❤️";
-
-return;
-
+        if (navigator.vibrate) {
+            navigator.vibrate([80, 60, 100]);
+        }
+    } else {
+        saved.style.color = "#ff4265";
+        saved.textContent = "Your answer wasn't saved. Please try again.";
+    }
 }
 
-
-/* ALWAYS SAVE LOCALLY */
-
-localStorage.setItem(
-"gontseJustinAnswer",
-answer
-);
-
-
-/* ALSO SAVE TO SUPABASE */
-
-const success =
-await savePulseEvent(
-"memory_answer",
-answer
-);
-
-
-if(success){
-
-saved.style.color =
-"#31ff91";
-
-saved.textContent =
-"❤️ Your answer is saved.";
-
-}else{
-
-saved.style.color =
-"#ffb347";
-
-saved.textContent =
-"💾 Saved on this phone. Cloud connection unavailable.";
-
-}
-
-
-if(navigator.vibrate){
-
-navigator.vibrate([
-80,
-60,
-100
- ]);
-
-}
-
-}
 
 
 /* =========================================================
-LOAD LOCAL ANSWER
+START PULSE AFTER AUTHENTICATION
 ========================================================= */
 
-const savedAnswer =
-localStorage.getItem(
-"gontseJustinAnswer"
-);
+window.addEventListener("load", function () {
+    setupPulseAuthentication();
+});
 
-if(savedAnswer){
-
-document
-.getElementById("answer")
-.value = savedAnswer;
-
-}
-
-
-/* =========================================================
-START SUPABASE CONNECTION CHECK
-========================================================= */
-
-window.addEventListener(
-"load",
-async function(){
-
-const connected =
-await testSupabase();
-
-
-
-if(connected){
-
-await loadPulseEvents();
-
-subscribeToPulseActivity();
-
-}else{
-
-document.getElementById(
-"pulseActivityList"
-).innerHTML =
-"💾 Cloud connection unavailable.";
-
-}
-
-}
-);
 
 
 </script>
